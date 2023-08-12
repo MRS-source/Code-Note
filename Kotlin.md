@@ -1,6 +1,6 @@
 ---
 created: 2023-08-11T03:43:16.209Z
-modified: 2023-08-11T15:15:45.542Z
+modified: 2023-08-12T15:56:07.861Z
 ---
 ## 内置函数
 
@@ -16,8 +16,10 @@ modified: 2023-08-11T15:15:45.542Z
     mutableListOf("name1", "name2", "name3") // 创建一个可变的List集合
     setOf("name1", "name2", "name3") // 创建一个不可变的不重复Set集合
     mutableSetOf("name1", "name2", "name3") // 创建一个可变的不重复Set集合
-    mapOf("name1" to 1, "name2" to 2, "name3" to 3) // 创建一个不可变的不重复列表集合
-    mutableMapOf("name1" to 1, "name2" to 2, "name3" to 3) // 创建一个可变的不重复列表集合
+    mapOf("name1" to 1, "name2" to 2, "name3" to 3) // 创建一个不可变的Map集合
+    mutableMapOf("name1" to 1, "name2" to 2, "name3" to 3) // 创建一个可变的Map集合
+    
+    let {} // 配合?.操作符来进行辅助判空处理
 
 ## 对象数据类型表
 
@@ -126,7 +128,7 @@ modified: 2023-08-11T15:15:45.542Z
 
 ### do-while:
 
-     while (i <= 5) {
+    while (i <= 5) {
         println(i)
         i++
     } // 普通的while
@@ -377,3 +379,93 @@ modified: 2023-08-11T15:15:45.542Z
         val upperCase = content!!.uppercase()
         println(upperCase)
     } // 在.前面增加!!.使用!!非空断言工具，跳过非空检查，有风险的写法，允许编译通过
+
+## 标准函数
+
+### with:
+
+        with(obj) {
+        // 这里是obj的上下文
+        "value" // with函数的返回值
+        } // with函数接收两个参数：第一个参数可以是一个任意类型的对象，第二个参数是一个Lambda表达式。with函数会在Lambda表达式中提供第一个参数对象的上下文，并使用Lambda表达式中的最后一行代码作为返回值返回
+    
+    val list = listOf("Apple", "Banana", "Orange", "Pear", "Grape")
+    val builder = StringBuilder()
+    builder.append("Start eating fruits.\n")
+    for (fruit in list) {
+        builder.append(fruit).append("\n")
+    }
+    builder.append("Ate all fruits.")
+    val result = builder.toString()
+    println(result) // 原始代码，连续调用了多次builder对象
+    
+    val list = listOf("Apple", "Banana", "Orange", "Pear", "Grape")
+    val result = with(StringBuilder()) {
+        append("Start eating fruits.\n")
+        for (fruit in list) {
+            append(fruit).append("\n")
+        }
+        append("Ate all fruits.")
+        toString()
+    }
+    println(result)
+    // 给with函数的第一个参数传入了StringBuilder对象，接下来整个Lambda表达式的上下文就会是这个StringBuilder对象。于是在Lambda表达式中就不用再像刚才那样调用builder.append()和builder.toString()方法，而是可以直接调用append()和toString()方法。Lambda表达式的最后一行代码会作为with函数的返回值返回，最终将结果打印出来
+
+### run:
+
+    val result = obj.run {
+        // 这里是obj的上下文
+        "value" // run函数的返回值
+    } // run函数的用法和使用场景和with函数是非常类似，稍微有一些语法改动。run函数通常不会直接调用，而是要在某个对象的基础上调用；其run函数只接收一个Lambda参数，并且会在Lambda表达式中提供调用对象的上下文。其他方面和with函数是一样的，包括也会使用Lambda表达式中的最后一行代码作为返回值返回
+    val list = listOf("Apple", "Banana", "Orange", "Pear", "Grape")
+    val result = StringBuilder().run {
+        append("Start eating fruits.\n")
+        for (fruit in list) {
+            append(fruit).append("\n")
+        }
+        append("Ate all fruits.")
+        toString()
+    }
+    println(result)
+    // 只是将调用with函数并传入StringBuilder对象改成了调用StringBuilder对象的run方法
+
+### apply:
+
+    val result = obj.apply {
+        // 这里是obj的上下文
+    }
+    // result == obj
+    // apply函数和run函数也是极其类似，都要在某个对象上调用，并且只接收一个Lambda参数，也会在Lambda表达式中提供调用对象的上下文，但是apply函数无法指定返回值，而是会自动返回调用对象本身
+    val list = listOf("Apple", "Banana", "Orange", "Pear", "Grape")
+    val result = StringBuilder().apply {
+        append("Start eating fruits.\n")
+        for (fruit in list) {
+            append(fruit).append("\n")
+        }
+        append("Ate all fruits.")
+    }
+    println(result.toString())
+    // 由于apply函数无法指定返回值，只能返回调用对象本身，因此这里的result实际上是一个StringBuilder对象，所以在最后打印的时候还要再调用它的toString()方法才行
+
+## 定义静态方法
+
+    class Util {
+        fun doAction1() {
+            println("do action1")
+        }
+        companion object {
+            fun doAction2() {
+                println("do action2")
+            }
+            @JvmStatic
+            fun doAction3() {
+                println("do action3")
+            }
+        }
+    } // 除了使用单例类还可以用companion object创建静态方法。companion object关键字实际上会在Util类的内部创建一个伴生类，而doAction2()方法就是定义在这个伴生类里面的实例方法，调用Util.doAction2()方法实际上就是调用了Util类中伴生对象的doAction2()方法。加上@JvmStatic注解（只能加在单例类或companion object中的方法上）可以使方法成为真正的静态方法，不管是在Kotlin中还是在Java中都可以使用Util.doAction3()的写法来调用
+    
+    // create file: Helper.kt
+    fun doSomething() {
+        println("do something")
+    } // 顶层方法指的是那些没有定义在任何类中的方法。Kotlin编译器会将所有的顶层方法全部编译成静态方法，因此只要定义了一个顶层方法，那么它就一定是静态方法，所有的顶层方法都可以在任何位置被直接调用，不用管包名路径，也不用创建实例，直接键入doSomething()即可
+    // 在Java代码中调用，会发现是找不到doSomething()这个方法的，因为Java中没有顶层方法这个概念，所有的方法必须定义在类中。刚才创建的Kotlin文件名叫作Helper.kt，Kotlin编译器会自动创建一个叫作HelperKt的Java类，doSomething()方法就是以静态方法的形式定义在HelperKt类里面，因此在Java中使用HelperKt.doSomething()的写法来调用就可以了
